@@ -1,0 +1,66 @@
+// index.html
+<!DOCTYPE html>
+<html>
+
+    <head>
+        <meta charset="UTF-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>E-post Assistent</title>
+        <script type="text/javascript" src="https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js"></script>
+        <script type="text/javascript" src="functions.js"></script>
+    </head>
+
+    <body>
+        <div id="content">
+            <button id="summarizeBtn" onclick="handleSummarize()">Sammanfatta e-post</button>
+            <button id="replyBtn" onclick="handleReply()">Föreslå svar</button>
+            <div id="result"></div>
+        </div>
+
+        <script>
+            Office.onReady((info) => {
+                if (info.host === Office.HostType.Outlook) {
+                    document.getElementById('summarizeBtn').disabled = false;
+                    document.getElementById('replyBtn').disabled = false;
+                }
+            });
+
+            async function handleSummarize() {
+                try {
+                    const item = Office.context.mailbox.item;
+                    const body = await getEmailBody(item);
+                    const summary = await summarizeEmail(body);
+                    document.getElementById('result').innerHTML = `<h3>Sammanfattning:</h3><p>${summary}</p>`;
+                } catch (error) {
+                    console.error('Hata:', error);
+                    document.getElementById('result').innerHTML = 'Ett fel uppstod vid sammanfattning av e-post.';
+                }
+            }
+
+            async function handleReply() {
+                try {
+                    const item = Office.context.mailbox.item;
+                    const body = await getEmailBody(item);
+                    const suggestion = await suggestReply(body);
+                    document.getElementById('result').innerHTML = `<h3>Förslag på svar:</h3><p>${suggestion}</p>`;
+                } catch (error) {
+                    console.error('Hata:', error);
+                    document.getElementById('result').innerHTML = 'Ett fel uppstod vid generering av svarsförslag.';
+                }
+            }
+
+            function getEmailBody(item) {
+                return new Promise((resolve, reject) => {
+                    item.body.getAsync(Office.CoercionType.Text, (result) => {
+                        if (result.status === Office.AsyncResultStatus.Succeeded) {
+                            resolve(result.value);
+                        } else {
+                            reject(new Error(result.error.message));
+                        }
+                    });
+                });
+            }
+        </script>
+    </body>
+
+</html>
